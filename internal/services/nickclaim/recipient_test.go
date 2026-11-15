@@ -3,7 +3,7 @@ package nickclaim_test
 import (
 	"testing"
 
-	"github.com/boson-chat/boson/backend/internal/services/nickclaim"
+	"github.com/boson-chat/backend/internal/services/nickclaim"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -46,12 +46,12 @@ func TestParseRecipient(t *testing.T) {
 			ok:    true,
 		},
 		// Non-matches
-		{name: "wrong prefix",         input: "support-abc12345@boson.chat", want: "", ok: false},
-		{name: "missing short_token",  input: "reg+550e8400e29b41d4a716446655440000@boson.chat", want: "", ok: false},
+		{name: "wrong prefix", input: "support-abc12345@boson.chat", want: "", ok: false},
+		{name: "missing short_token", input: "reg+550e8400e29b41d4a716446655440000@boson.chat", want: "", ok: false},
 		{name: "short_token too short", input: "reg+550e8400e29b41d4a716446655440000-abc@boson.chat", want: "", ok: false},
 		{name: "short_token has invalid chars", input: "reg+550e8400e29b41d4a716446655440000-ABC!1234@boson.chat", want: "", ok: false},
-		{name: "userid wrong length",  input: "reg+too-short-abc12345@boson.chat", want: "", ok: false},
-		{name: "empty",                input: "", want: "", ok: false},
+		{name: "userid wrong length", input: "reg+too-short-abc12345@boson.chat", want: "", ok: false},
+		{name: "empty", input: "", want: "", ok: false},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

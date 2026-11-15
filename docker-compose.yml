@@ -42,7 +42,9 @@ services:
     networks:
       - boson-network
 
-  # Local IRC server for E2E tests. Plain TCP on 6667; do not expose externally.
+  # Local IRC server (Ergo) for trying the nick-claim flow end to end: its
+  # REGISTER mail goes to mailpit, which the backend's POP3 worker drains.
+  # Plain TCP on 6667; do not expose externally. `make ergo-up`.
   ergo:
     image: ghcr.io/ergochat/ergo:stable
     ports:
@@ -61,114 +63,6 @@ services:
     profiles:
       - testing
 
-  # ---- Anope + UnrealIRCd e2e stack -----------------------------------
-  #
-  # Only spun up when the e2e-anope profile is explicitly requested:
-  #   docker compose --profile e2e-anope up -d
-  #
-  # Client traffic exposed on host port 6668 so it doesn't collide with
-  # the testing-profile Ergo container on 6667. The services link runs
-  # on 6900 entirely inside the docker network.
-  unrealircd:
-    # `ircd/unrealircd` is the community image referenced by
-    # https://www.unrealircd.org/docs/Docker — there is no official
-    # Unreal-published image. Pinned to `nightly` because that's the
-    # only tag the registry actually publishes; the `latest` tag is
-    # missing despite docs assuming it.
-    image: ircd/unrealircd:nightly
-    profiles:
-      - e2e-anope
-    # Image has no default CMD — run the binary directly in
-    # foreground so docker manages the lifecycle. U5 refuses to
-    # start without a TLS cert in /ircd/tls/, so we bake throwaway
-    # self-signed certs into infra/anope/tls/ and mount them
-    # alongside the config. Those certs are CN=irc.test, RSA-2048,
-    # expire 100y out — safe to commit.
-    command: ["/app/unrealircd/bin/unrealircd", "-F"]
-    ports:
-      - '6668:6667'
-    volumes:
-      - ./infra/anope/unrealircd.conf:/ircd/unrealircd.conf:ro
-      - ./infra/anope/tls/server.cert.pem:/ircd/tls/server.cert.pem:ro
-      - ./infra/anope/tls/server.key.pem:/ircd/tls/server.key.pem:ro
-    healthcheck:
-      # Services-only port readiness — Anope refuses to link if this
-      # port isn't accepting yet. nc is part of the base image.
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 6900 || exit 1"]
-      interval: 2s
-      timeout: 2s
-      retries: 30
-    networks:
-      - boson-network
-
-  anope:
-    image: anope/anope:latest
-    profiles:
-      - e2e-anope
-    volumes:
-      - ./infra/anope/conf:/anope/conf:ro
-      - anope_data:/anope/data
-      # Mount our netcat-based sendmail shim over the path Anope
-      # invokes for outbound mail (`sendmailpath` in services.conf).
-      # Reroutes confirmation emails to mailpit:1025 without
-      # installing extra packages in the image.
-      - ./infra/sendmail-shim.sh:/usr/sbin/sendmail:ro
-    depends_on:
-      unrealircd:
-        condition: service_healthy
-      mailpit:
-        condition: service_started
-    networks:
-      - boson-network
-
-  # ---- Atheme + InspIRCd e2e stack ------------------------------------
-  #
-  # Pinned to InspIRCd 3.18 (not 4.x) because Atheme 7.2.12 (the
-  # version shipped by `ovdnet/atheme:latest`) speaks the InspIRCd 3
-  # wire protocol. InspIRCd 4 removed v3 compat — see
-  # https://github.com/atheme/atheme/issues/904. Atheme master
-  # (post-Nov 2024) fixed this, but no public Docker image ships that
-  # build yet.
-  #
-  # Activated via:  docker compose --profile e2e-atheme up -d
-  # Host port: 6669 (client). 7000 internal-only services link.
-  inspircd:
-    image: inspircd/inspircd-docker:3.18
-    profiles:
-      - e2e-atheme
-    ports:
-      - '6669:6667'
-    volumes:
-      - ./infra/atheme/inspircd.conf:/inspircd/conf/inspircd.conf:ro
-    healthcheck:
-      # Services-only port readiness — Atheme refuses to link if this
-      # port isn't accepting yet. nc is in busybox baseline.
-      test: ["CMD-SHELL", "nc -z 127.0.0.1 7000 || exit 1"]
-      interval: 2s
-      timeout: 2s
-      retries: 30
-    networks:
-      - boson-network
-
-  atheme:
-    image: ovdnet/atheme:latest
-    profiles:
-      - e2e-atheme
-    volumes:
-      - ./infra/atheme/atheme.conf:/atheme/etc/atheme.conf:ro
-      - atheme_data:/atheme/var
-      # Same shim as anope. Atheme's sendmail path is a compile-time
-      # default (/usr/sbin/sendmail); mounting our script there
-      # routes outbound mail to mailpit:1025.
-      - ./infra/sendmail-shim.sh:/usr/sbin/sendmail:ro
-    depends_on:
-      inspircd:
-        condition: service_healthy
-      mailpit:
-        condition: service_started
-    networks:
-      - boson-network
-
   # ---- Mailpit (local-dev mailbox for the nickclaim flow) -------------
   #
   # Mailpit accepts SMTP on 1025, serves POP3 on 1110, and a web UI
@@ -178,15 +72,12 @@ services:
   # doesn't speak IMAP; PurelyMail supports both.)
   #
   # Activated via:  docker compose --profile dev-mail up -d
-  # NickServ packages (Anope/Atheme) need to point their outbound
-  # mail at mailpit:1025 for the full local end-to-end claim flow.
+  # The ergo service above already delivers its NickServ mail here.
   mailpit:
     image: axllent/mailpit:latest
     profiles:
       - dev-mail
       - testing
-      - e2e-atheme
-      - e2e-anope
     ports:
       - '1025:1025'  # SMTP — services packages deliver here
       - '1110:1110'  # POP3 — backend worker reads from here
@@ -206,7 +97,7 @@ services:
   # ---- MinIO (local S3 for the profile-image / avatar feature) --------
   #
   # R2 is S3-compatible, so local dev points the backend's CLOUDFLARE_R2_*
-  # config at MinIO instead of real R2 (see backend/config/config.dev.json).
+  # config at MinIO instead of real R2 (see config/config.dev.json).
   # The backend runs natively (`make run`) so it reaches MinIO at
   # localhost:9000; the desktop client loads avatars from the same origin
   # (CDN base = http://localhost:9000/boson), which is why the bucket is
@@ -263,7 +154,7 @@ services:
   #
   # github.com/boson-chat/auth, built from a checkout next to this repo
   # (AUTH_SRC=../auth by default). `make auth-up`. Public API on :8080 —
-  # what the backend (AUTH_JWKS_URL / AUTH_ISSUER) and client/.env
+  # what the backend (AUTH_JWKS_URL / AUTH_ISSUER) and the client's .env
   # (VITE_AUTH_URL) point at. Its mail (verification, password reset)
   # goes to its own Mailpit, UI http://localhost:8026: the shared mailpit
   # above is drained by the backend's nick-claim worker.
@@ -310,7 +201,7 @@ services:
       COOKIE_SECURE: 'false'
       DATABASE_URL: postgres://auth:auth@auth-postgres:5432/auth?sslmode=disable
       AUTH_KEY_ENCRYPTION_KEY: ZGV2LW9ubHkta2V5LWJvc29uLWF1dGgtbG9jYWwtZHY=
-      # The renderer in a browser (`make client-dev`) calls it directly;
+      # The renderer in a browser (the client's Vite dev server) calls it directly;
       # the desktop app goes through its API proxy (no CORS).
       CORS_ALLOWED_ORIGINS: http://localhost:5173
       REQUIRE_EMAIL_VERIFICATION: 'true'
@@ -331,6 +222,4 @@ volumes:
   postgres_data:
   auth_postgres_data:
   ergo_data:
-  anope_data:
-  atheme_data:
   minio_data:

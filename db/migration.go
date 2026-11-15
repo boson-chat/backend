@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/boson-chat/boson/backend/config"
-	internaldb "github.com/boson-chat/boson/backend/internal/db"
+	"github.com/boson-chat/backend/config"
+	internaldb "github.com/boson-chat/backend/internal/db"
 
 	"github.com/golang-migrate/migrate/v4"
 	migpostgres "github.com/golang-migrate/migrate/v4/database/postgres"

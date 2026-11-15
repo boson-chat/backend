@@ -6,8 +6,8 @@ import (
 	"errors"
 	stdhttp "net/http"
 
-	"github.com/boson-chat/boson/backend/http/middleware"
-	"github.com/boson-chat/boson/backend/internal/services/bouncersecret"
+	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/services/bouncersecret"
 )
 
 // BouncerSecretHandler exposes the per-user, end-to-end-encrypted bouncer

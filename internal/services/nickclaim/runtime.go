@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/boson-chat/boson/backend/internal/logger"
+	"github.com/boson-chat/backend/internal/logger"
 )
 
 // Settings are the live nick-claim settings (stack config file, then

@@ -5,8 +5,8 @@ import (
 	"errors"
 	stdhttp "net/http"
 
-	"github.com/boson-chat/boson/backend/http/middleware"
-	"github.com/boson-chat/boson/backend/internal/services/session"
+	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/services/session"
 )
 
 // SessionHandler exposes per-user saved-session storage. The renderer mirrors

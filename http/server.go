@@ -9,19 +9,19 @@ import (
 
 	"github.com/rs/zerolog/log"
 
-	"github.com/boson-chat/boson/backend/config"
-	"github.com/boson-chat/boson/backend/http/handlers"
-	"github.com/boson-chat/boson/backend/http/middleware"
-	"github.com/boson-chat/boson/backend/internal/db"
-	"github.com/boson-chat/boson/backend/internal/logger"
-	"github.com/boson-chat/boson/backend/internal/services/authidentity"
-	"github.com/boson-chat/boson/backend/internal/services/avatar"
-	"github.com/boson-chat/boson/backend/internal/services/bouncersecret"
-	"github.com/boson-chat/boson/backend/internal/services/nickclaim"
-	"github.com/boson-chat/boson/backend/internal/services/nickservsecret"
-	"github.com/boson-chat/boson/backend/internal/services/presence"
-	sessionsvc "github.com/boson-chat/boson/backend/internal/services/session"
-	"github.com/boson-chat/boson/backend/internal/services/user"
+	"github.com/boson-chat/backend/config"
+	"github.com/boson-chat/backend/http/handlers"
+	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/db"
+	"github.com/boson-chat/backend/internal/logger"
+	"github.com/boson-chat/backend/internal/services/authidentity"
+	"github.com/boson-chat/backend/internal/services/avatar"
+	"github.com/boson-chat/backend/internal/services/bouncersecret"
+	"github.com/boson-chat/backend/internal/services/nickclaim"
+	"github.com/boson-chat/backend/internal/services/nickservsecret"
+	"github.com/boson-chat/backend/internal/services/presence"
+	sessionsvc "github.com/boson-chat/backend/internal/services/session"
+	"github.com/boson-chat/backend/internal/services/user"
 )
 
 func StartServerWithContext(ctx context.Context) error {

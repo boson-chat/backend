@@ -13,15 +13,15 @@ import (
 // stubRepo is a hand-written mock of UserRepositoryImpl driven by lambdas
 // stored on the struct. Cleaner than reflection-based mocks.
 type stubRepo struct {
-	findByID         func(ctx context.Context, id uuid.UUID) (*User, error)
-	findByHandle     func(ctx context.Context, handle string) (*User, error)
-	create           func(ctx context.Context, u *User) error
-	deleteFn         func(ctx context.Context, id uuid.UUID) error
-	updateHandle     func(ctx context.Context, id uuid.UUID, newHandle string) (*User, error)
-	updateWraps      func(ctx context.Context, id uuid.UUID, passwordWrap, recoveryWrap []byte) (*User, error)
-	updateAvatarKey  func(ctx context.Context, id uuid.UUID, key *string) (*User, error)
-	createCalls      []*User
-	deleteCalls      []uuid.UUID
+	findByID          func(ctx context.Context, id uuid.UUID) (*User, error)
+	findByHandle      func(ctx context.Context, handle string) (*User, error)
+	create            func(ctx context.Context, u *User) error
+	deleteFn          func(ctx context.Context, id uuid.UUID) error
+	updateHandle      func(ctx context.Context, id uuid.UUID, newHandle string) (*User, error)
+	updateWraps       func(ctx context.Context, id uuid.UUID, passwordWrap, recoveryWrap []byte) (*User, error)
+	updateAvatarKey   func(ctx context.Context, id uuid.UUID, key *string) (*User, error)
+	createCalls       []*User
+	deleteCalls       []uuid.UUID
 	updateHandleCalls []stubRepoUpdateHandleCall
 }
 

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/boson-chat/boson/backend/http/middleware"
-	"github.com/boson-chat/boson/backend/internal/services/nickclaim"
+	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/services/nickclaim"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

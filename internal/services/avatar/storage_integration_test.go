@@ -17,7 +17,7 @@ import (
 // path-style addressing, "auto" region — that unit tests (fake Storage)
 // can't cover.
 //
-//	R2_TEST_ENDPOINT=http://localhost:9000 go test ./backend/internal/services/avatar/ -run Integration -v
+//	R2_TEST_ENDPOINT=http://localhost:9000 go test ./internal/services/avatar/ -run Integration -v
 func TestR2Storage_Integration(t *testing.T) {
 	endpoint := os.Getenv("R2_TEST_ENDPOINT")
 	if endpoint == "" {

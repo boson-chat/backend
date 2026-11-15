@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/boson-chat/boson/backend/internal/logger"
+	"github.com/boson-chat/backend/internal/logger"
 
 	"github.com/emersion/go-message"
 	// Registers every charset golang.org/x/text knows (iso-8859-*,

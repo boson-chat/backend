@@ -10,10 +10,10 @@ import (
 	"sort"
 	"time"
 
-	"github.com/boson-chat/boson/backend/config"
-	internaldb "github.com/boson-chat/boson/backend/internal/db"
-	"github.com/boson-chat/boson/backend/internal/services/authidentity"
-	"github.com/boson-chat/boson/backend/internal/supabaseimport"
+	"github.com/boson-chat/backend/config"
+	internaldb "github.com/boson-chat/backend/internal/db"
+	"github.com/boson-chat/backend/internal/services/authidentity"
+	"github.com/boson-chat/backend/internal/supabaseimport"
 
 	_ "github.com/lib/pq" // database/sql driver "postgres" for the auth DB
 	"github.com/spf13/cobra"

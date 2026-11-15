@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"github.com/boson-chat/boson/backend/db"
+	"github.com/boson-chat/backend/db"
 
 	"github.com/spf13/cobra"
 )

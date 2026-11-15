@@ -3,7 +3,7 @@ package handlers
 import (
 	stdhttp "net/http"
 
-	"github.com/boson-chat/boson/backend/internal/services/nickclaim"
+	"github.com/boson-chat/backend/internal/services/nickclaim"
 )
 
 // PublicConfigHandler serves GET /config: the network's capabilities the

@@ -152,8 +152,8 @@ func LoadConfigOrPanic() Config {
 
 	// configor.Load(&cfg, paths...) walks the paths and merges
 	// each existing file. Path resolution is CWD-relative, so we
-	// try a few likely cwds (repo root + backend/ subdir) so
-	// `make run` from any directory still picks up the dev file.
+	// try a few likely cwds (repo root, cmd/, cmd/server/) so
+	// `make run` / `go run` from any of them still picks up the dev file.
 	files := existingFiles(configFileSearchPaths())
 	if err := configor.Load(&cfg, files...); err != nil {
 		panic(err)
@@ -167,9 +167,9 @@ func LoadConfigOrPanic() Config {
 // local dev); production sets env vars directly.
 func configFileSearchPaths() []string {
 	return []string{
-		"backend/config/config.dev.json", // running from repo root
-		"config/config.dev.json",         // running from backend/
-		"../config/config.dev.json",      // running from backend/cmd/
+		"config/config.dev.json",       // running from repo root
+		"../config/config.dev.json",    // running from cmd/
+		"../../config/config.dev.json", // running from cmd/server/
 	}
 }
 

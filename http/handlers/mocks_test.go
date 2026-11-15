@@ -3,7 +3,7 @@ package handlers
 import (
 	"context"
 
-	"github.com/boson-chat/boson/backend/internal/services/user"
+	"github.com/boson-chat/backend/internal/services/user"
 
 	"github.com/google/uuid"
 )

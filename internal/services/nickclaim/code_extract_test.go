@@ -3,7 +3,7 @@ package nickclaim_test
 import (
 	"testing"
 
-	"github.com/boson-chat/boson/backend/internal/services/nickclaim"
+	"github.com/boson-chat/backend/internal/services/nickclaim"
 
 	"github.com/stretchr/testify/assert"
 )
