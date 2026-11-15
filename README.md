@@ -177,3 +177,11 @@ Deploy by setting the stack's `API_IMAGE` to the new tag.
 
 Versions continue from the monorepo: releases up to v0.55.0 were cut from
 boson-chat/boson.
+
+## License
+
+Copyright (C) 2026 bludot / the boson authors
+
+Licensed under the [GNU Affero General Public License v3.0](LICENSE) only (`AGPL-3.0-only`).
+
+In plain English: if you run a modified version of this software as a network service, you must offer its source code to the people who use that service.
