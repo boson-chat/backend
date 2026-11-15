@@ -12,9 +12,9 @@ import (
 
 	stdhttp "net/http"
 
-	"github.com/boson-chat/boson/backend/config"
-	"github.com/boson-chat/boson/backend/http/handlers"
-	"github.com/boson-chat/boson/backend/internal/services/nickclaim"
+	"github.com/boson-chat/backend/config"
+	"github.com/boson-chat/backend/http/handlers"
+	"github.com/boson-chat/backend/internal/services/nickclaim"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

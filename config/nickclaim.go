@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/boson-chat/boson/backend/internal/configfile"
+	"github.com/boson-chat/backend/internal/configfile"
 	"gopkg.in/yaml.v3"
 )
 

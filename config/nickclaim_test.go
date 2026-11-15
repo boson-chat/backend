@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/boson-chat/boson/backend/internal/configfile"
+	"github.com/boson-chat/backend/internal/configfile"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

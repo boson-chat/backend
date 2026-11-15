@@ -3,9 +3,9 @@ package commands
 import (
 	"context"
 
-	"github.com/boson-chat/boson/backend/config"
-	"github.com/boson-chat/boson/backend/http"
-	"github.com/boson-chat/boson/backend/internal/logger"
+	"github.com/boson-chat/backend/config"
+	"github.com/boson-chat/backend/http"
+	"github.com/boson-chat/backend/internal/logger"
 
 	"github.com/spf13/cobra"
 )

@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/boson-chat/boson/backend/internal/db"
-	"github.com/boson-chat/boson/backend/internal/services/authidentity"
+	"github.com/boson-chat/backend/internal/db"
+	"github.com/boson-chat/backend/internal/services/authidentity"
 
 	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"

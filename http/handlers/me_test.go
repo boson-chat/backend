@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/boson-chat/boson/backend/http/middleware"
-	"github.com/boson-chat/boson/backend/internal/services/user"
+	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/services/user"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -125,7 +125,7 @@ func TestMeHandler_UpdateSecretWraps_RecoveryOnly(t *testing.T) {
 	uid := uuid.New()
 	svc := &stubUserService{
 		updateWraps: func(_ context.Context, _ uuid.UUID, pw, rec []byte) (*user.User, error) {
-			assert.Nil(t, pw)               // password wrap untouched
+			assert.Nil(t, pw) // password wrap untouched
 			assert.Equal(t, []byte("efgh"), rec)
 			return &user.User{ID: uid}, nil
 		},

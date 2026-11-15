@@ -7,8 +7,8 @@ import (
 	stdhttp "net/http"
 	"strings"
 
-	"github.com/boson-chat/boson/backend/http/middleware"
-	"github.com/boson-chat/boson/backend/internal/services/nickservsecret"
+	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/services/nickservsecret"
 )
 
 // NickServSecretsHandler exposes per-user, end-to-end-encrypted NickServ

@@ -10,7 +10,7 @@ import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 
-	"github.com/boson-chat/boson/backend/internal/db"
+	"github.com/boson-chat/backend/internal/db"
 )
 
 var ErrNotFound = errors.New("session not found")

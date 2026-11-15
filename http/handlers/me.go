@@ -7,9 +7,9 @@ import (
 	"io"
 	stdhttp "net/http"
 
-	"github.com/boson-chat/boson/backend/http/middleware"
-	"github.com/boson-chat/boson/backend/internal/services/avatar"
-	"github.com/boson-chat/boson/backend/internal/services/user"
+	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/services/avatar"
+	"github.com/boson-chat/backend/internal/services/user"
 )
 
 type MeHandler struct {

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/boson-chat/boson/backend/internal/testutil"
+	"github.com/boson-chat/backend/internal/testutil"
 
 	"github.com/golang-migrate/migrate/v4"
 	migpostgres "github.com/golang-migrate/migrate/v4/database/postgres"

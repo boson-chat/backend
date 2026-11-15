@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/boson-chat/boson/backend/internal/db"
+	"github.com/boson-chat/backend/internal/db"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"

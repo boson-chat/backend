@@ -2,14 +2,14 @@ package handlers
 
 import (
 	"context"
-	"net/http/httptest"
 	stdhttp "net/http"
+	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/boson-chat/boson/backend/http/middleware"
-	"github.com/boson-chat/boson/backend/internal/services/avatar"
-	"github.com/boson-chat/boson/backend/internal/services/presence"
+	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/services/avatar"
+	"github.com/boson-chat/backend/internal/services/presence"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

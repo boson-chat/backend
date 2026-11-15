@@ -1,0 +1,23 @@
+# Binaries + build artifacts
+*.exe
+*.test
+*.out
+/main
+/bin/
+/coverage/
+
+# Go workspace
+go.work
+go.work.sum
+
+# IDE / local tool state
+.idea/
+.vscode/
+.claude/
+
+# Environment + local config (may hold real keys; never commit)
+.env
+.env.local
+.env.*
+!.env.example
+config/config.dev.json

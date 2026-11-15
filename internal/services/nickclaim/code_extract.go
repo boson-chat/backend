@@ -11,13 +11,13 @@ import (
 //
 // Patterns ordered by specificity. The first hit wins.
 //
-//   Anope     "/msg NickServ CONFIRM <code>"
-//             (ns_register.cpp template body)
-//   Atheme    "/msg NickServ VERIFY REGISTER <acct> <key>"
-//             (verify.c template body)
-//   Generic   line "code: <token>" / "passcode: <token>" /
-//             "verification code: <token>" — fallback for non-
-//             canonical phrasings or new services packages.
+//	Anope     "/msg NickServ CONFIRM <code>"
+//	          (ns_register.cpp template body)
+//	Atheme    "/msg NickServ VERIFY REGISTER <acct> <key>"
+//	          (verify.c template body)
+//	Generic   line "code: <token>" / "passcode: <token>" /
+//	          "verification code: <token>" — fallback for non-
+//	          canonical phrasings or new services packages.
 //
 // Returns the FIRST non-empty match. Bodies are sometimes wrapped
 // at column 80 with the verb on one line and the args on the next —
@@ -93,7 +93,7 @@ var (
 //   - Atheme:  body "/msg NickServ VERIFY REGISTER <nick> ..."
 //   - Ergo:    body "/MSG NickServ VERIFY <nick> ..."
 //   - Anope:   subject "Nickname registration for <nick>" OR
-//              body "register(ed) the nickname <nick>"
+//     body "register(ed) the nickname <nick>"
 func ExtractAccountName(subject, body string) (string, bool) {
 	body = stripQuotedPrintableArtifacts(body)
 	// Specific verb patterns first — they're constrained enough that

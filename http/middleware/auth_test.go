@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/boson-chat/boson/backend/config"
+	"github.com/boson-chat/backend/config"
 
 	"github.com/MicahParks/jwkset"
 	"github.com/golang-jwt/jwt/v5"

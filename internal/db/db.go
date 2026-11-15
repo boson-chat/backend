@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/boson-chat/boson/backend/config"
+	"github.com/boson-chat/backend/config"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"

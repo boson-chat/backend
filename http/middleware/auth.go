@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/boson-chat/boson/backend/config"
+	"github.com/boson-chat/backend/config"
 
 	"github.com/MicahParks/keyfunc/v3"
 	"github.com/golang-jwt/jwt/v5"

@@ -1,4 +1,4 @@
-module github.com/boson-chat/boson
+module github.com/boson-chat/backend
 
 go 1.27.0
 
@@ -8,7 +8,6 @@ require (
 	github.com/aws/aws-sdk-go-v2 v1.42.0
 	github.com/aws/aws-sdk-go-v2/credentials v1.19.24
 	github.com/aws/aws-sdk-go-v2/service/s3 v1.103.3
-	github.com/coder/websocket v1.8.14
 	github.com/emersion/go-message v0.18.2
 	github.com/fsnotify/fsnotify v1.9.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
@@ -17,7 +16,6 @@ require (
 	github.com/jinzhu/configor v1.2.2
 	github.com/knadh/go-pop3 v1.0.2
 	github.com/lib/pq v1.10.9
-	github.com/lrstanley/girc v1.1.1
 	github.com/oklog/ulid/v2 v2.1.2
 	github.com/rs/zerolog v1.33.0
 	github.com/spf13/cobra v1.9.1

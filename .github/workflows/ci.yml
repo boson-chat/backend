@@ -1,0 +1,81 @@
+# Gate every PR + main push: gofmt, go mod tidy, go vet (release and
+# coverage-e2e build tags), go test -race against a real Postgres, and a
+# Docker build of the release image.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  go:
+    name: Go (vet + test)
+    runs-on: ubuntu-latest
+    # Real Postgres for the repository/integration tests under
+    # internal/services/*. testutil/db.go skips DB-backed tests when Postgres
+    # is unreachable, but we want them exercised in CI.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: boson
+          POSTGRES_PASSWORD: boson
+          POSTGRES_DB: boson
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U boson -d boson"
+          --health-interval 2s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      TEST_DBHOST: localhost
+      TEST_DBPORT: '5432'
+      TEST_DBUSERNAME: boson
+      TEST_DBPASSWORD: boson
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: go mod tidy (verify lockfile is in sync)
+        run: |
+          go mod tidy
+          git diff --exit-code go.mod go.sum
+      - name: go vet
+        run: go vet ./...
+      - name: go vet (coverage e2e build tags)
+        run: go vet -tags boson_dev,boson_e2ecover ./...
+      - name: Coverage e2e build compiles
+        run: go build -cover -tags boson_dev,boson_e2ecover -o /dev/null ./cmd/server
+      # -p 1 serialises packages because they share the boson_test database.
+      - name: go test
+        run: go test -race -p 1 -count=1 ./...
+
+  docker:
+    name: Docker build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build (no push)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: false
+          build-args: |
+            VERSION=ci
+          tags: boson/backend:ci

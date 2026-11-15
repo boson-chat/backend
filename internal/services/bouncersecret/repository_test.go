@@ -3,9 +3,9 @@ package bouncersecret_test
 import (
 	"testing"
 
-	"github.com/boson-chat/boson/backend/internal/services/bouncersecret"
-	"github.com/boson-chat/boson/backend/internal/services/user"
-	"github.com/boson-chat/boson/backend/internal/testutil"
+	"github.com/boson-chat/backend/internal/services/bouncersecret"
+	"github.com/boson-chat/backend/internal/services/user"
+	"github.com/boson-chat/backend/internal/testutil"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"

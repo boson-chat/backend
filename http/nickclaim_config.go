@@ -5,10 +5,10 @@ import (
 	stdhttp "net/http"
 	"time"
 
-	"github.com/boson-chat/boson/backend/config"
-	"github.com/boson-chat/boson/backend/internal/configfile"
-	"github.com/boson-chat/boson/backend/internal/logger"
-	"github.com/boson-chat/boson/backend/internal/services/nickclaim"
+	"github.com/boson-chat/backend/config"
+	"github.com/boson-chat/backend/internal/configfile"
+	"github.com/boson-chat/backend/internal/logger"
+	"github.com/boson-chat/backend/internal/services/nickclaim"
 )
 
 // configPoll is the config file's mtime poll (fallback for file systems

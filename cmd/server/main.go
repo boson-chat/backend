@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/boson-chat/boson/backend/internal/commands"
+	"github.com/boson-chat/backend/internal/commands"
 )
 
 func main() {
