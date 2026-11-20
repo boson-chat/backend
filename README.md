@@ -16,6 +16,17 @@ app syncs per account in Postgres:
 - **Nick claims**: automatic NickServ registration on other networks
   (`/me/nick-claims`), with a POP3 worker that reads confirmation codes from
   a dedicated inbound mailbox.
+- **Admin profile lookup**: `GET /v1/admin/profiles/{auth_user_id}` returns
+  a person's boson profile for the admin panel's user page: `{profile:
+  {user_id, auth_user_id, handle, display_name, avatar_url, is_discoverable,
+  handle_changed_at, created_at}, servers: []}`.
+  - Needs the `users.view` permission (or, with tokens from auth before
+    1.5, role `admin`); otherwise 403 `{"error":"missing_permission"}`.
+  - Someone who never opened boson gets 404 `{"error":"profile_not_found"}`,
+    and no mapping row is created for them.
+  - It never returns the encrypted secret wraps.
+  - `servers` is always empty: networks people register now live in the
+    directory service.
 
 Public routes are `GET /health` and `GET /config`; everything else needs a
 `Bearer` token from the auth service. A separate internal listener (`:3001`)

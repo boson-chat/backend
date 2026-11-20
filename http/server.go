@@ -67,6 +67,8 @@ func StartServerWithContext(ctx context.Context) error {
 	nickservSecretsHandler := handlers.NewNickServSecretsHandler(nickservSecretService)
 	bouncerSecretHandler := handlers.NewBouncerSecretHandler(bouncerSecretService)
 	presenceHandler := handlers.NewPresenceHandler(presenceService, avatarService)
+	identities := authidentity.NewService(database)
+	adminProfilesHandler := handlers.NewAdminProfilesHandler(userService, identities, avatarService)
 
 	// Public routes — health and the capability switches the client reads
 	// (GET /config). The server directory moved to the standalone
@@ -83,6 +85,7 @@ func StartServerWithContext(ctx context.Context) error {
 	nickservSecretsHandler.Register(protectedMux)
 	bouncerSecretHandler.Register(protectedMux)
 	presenceHandler.Register(protectedMux)
+	adminProfilesHandler.Register(protectedMux)
 
 	// Access tokens come from the boson auth service; auth_identities maps
 	// their sub to boson's user ids (imported Supabase accounts keep theirs).
@@ -90,7 +93,6 @@ func StartServerWithContext(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("auth: %w", err)
 	}
-	identities := authidentity.NewService(database)
 	root := buildRouter(publicMux, protectedMux, middleware.RequireAuth(tokens, identities))
 
 	// Nick claims: automatic NickServ registration on other networks.

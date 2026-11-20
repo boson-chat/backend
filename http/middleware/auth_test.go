@@ -273,3 +273,30 @@ func TestUserFromCtx_ReturnsFalseWhenAbsent(t *testing.T) {
 func TestMustUser_PanicsWhenAbsent(t *testing.T) {
 	assert.Panics(t, func() { _ = MustUser(context.Background()) })
 }
+
+func TestRequireAuth_CarriesPermsClaim(t *testing.T) {
+	f := newJWKSFixture(t)
+	var got Principal
+	h := RequireAuth(newVerifier(t, f.url), &mapResolver{})(stdhttp.HandlerFunc(func(_ stdhttp.ResponseWriter, r *stdhttp.Request) {
+		got = MustUser(r.Context())
+	}))
+
+	c := validClaims("usr_01ALICE")
+	c["perms"] = []string{"admin.panel", "users.view"}
+	require.Equal(t, stdhttp.StatusOK, call(h, f.sign(t, c)).Code)
+	assert.True(t, got.HasPerms)
+	assert.True(t, got.Can("users.view"))
+	assert.False(t, got.Can("users.manage"))
+
+	c = validClaims("usr_01ALICE")
+	c["perms"] = []string{}
+	require.Equal(t, stdhttp.StatusOK, call(h, f.sign(t, c)).Code)
+	assert.True(t, got.HasPerms, "an empty perms claim is still present")
+	assert.False(t, got.Can("users.view"))
+
+	c = validClaims("usr_01ALICE")
+	c["role"] = "admin"
+	require.Equal(t, stdhttp.StatusOK, call(h, f.sign(t, c)).Code)
+	assert.False(t, got.HasPerms)
+	assert.True(t, got.Can("users.view"), "older tokens: admin role holds every permission")
+}
