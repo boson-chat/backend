@@ -29,6 +29,25 @@ type Principal struct {
 	Username string
 	// Role is `user` or `admin` from the token.
 	Role string
+	// Perms are the network permissions from the token's `perms` claim
+	// (auth >= 1.5), e.g. "users.view". HasPerms: the claim was present at
+	// all (even empty); tokens from older auth have only Role.
+	Perms    []string
+	HasPerms bool
+}
+
+// Can reports whether the principal holds a network permission. With no
+// `perms` claim (older auth), an `admin` role holds every permission.
+func (p Principal) Can(perm string) bool {
+	if !p.HasPerms {
+		return p.Role == "admin"
+	}
+	for _, x := range p.Perms {
+		if x == perm {
+			return true
+		}
+	}
+	return false
 }
 
 func UserFromCtx(ctx context.Context) (Principal, bool) {
@@ -62,6 +81,8 @@ type accessClaims struct {
 	SessionID string `json:"sid"`
 	Name      string `json:"name"`
 	Role      string `json:"role"`
+	// nil = no perms claim (older auth); non-nil, possibly empty = present.
+	Perms *[]string `json:"perms"`
 }
 
 // Verifier checks auth-service access tokens: EdDSA only, a key from the
@@ -145,6 +166,9 @@ func RequireAuth(v *Verifier, resolver UserIDResolver) func(stdhttp.Handler) std
 				return
 			}
 			p := Principal{UserID: id, AuthUserID: c.Subject, Username: c.Name, Role: c.Role}
+			if c.Perms != nil {
+				p.Perms, p.HasPerms = *c.Perms, true
+			}
 			next.ServeHTTP(w, r.WithContext(WithUser(r.Context(), p)))
 		})
 	}
