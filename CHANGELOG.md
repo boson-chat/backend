@@ -1,3 +1,13 @@
+## [0.56.0](https://github.com/boson-chat/backend/compare/v0.55.1...v0.56.0) (2026-11-20)
+
+### Features
+
+* GET /v1/admin/profiles/{auth_user_id} for the admin panel's user page ([#3](https://github.com/boson-chat/backend/issues/3)) ([e5bd64c](https://github.com/boson-chat/backend/commit/e5bd64c232dcae02a383928291a346d079120061))
+
+### Documentation
+
+* license under AGPL-3.0-only ([#2](https://github.com/boson-chat/backend/issues/2)) ([483e79c](https://github.com/boson-chat/backend/commit/483e79caa8ead8ece084c66d99c69549d2fab392))
+
 ## [0.55.1](https://github.com/boson-chat/backend/compare/v0.55.0...v0.55.1) (2026-11-15)
 
 ### Build
