@@ -28,7 +28,11 @@ app syncs per account in Postgres:
   - `servers` is always empty: networks people register now live in the
     directory service.
 
-Public routes are `GET /health` and `GET /config`; everything else needs a
+- **Link previews**: site cards (OpenGraph, YouTube titles) and Spotify
+  cards for the web client, which can't fetch other sites itself
+  (`/v1/unfurl`, `/v1/unfurl/spotify`; see [Link previews](#link-previews)).
+
+Public routes are `GET /health`, `GET /config` and `GET /v1/unfurl*`; everything else needs a
 `Bearer` token from the auth service. A separate internal listener (`:3001`)
 serves the stack config status and the admin panel's nick-claim endpoints.
 
@@ -45,6 +49,7 @@ cmd/server/          main (cobra CLI: serve, migrate, export-config, import-supa
 config/              config structs (env + config/config.dev.json + defaults), nick-claim config
 db/                  embedded golang-migrate migrations (db/migrations/*.sql)
 http/                router, middleware (token verification), handlers
+pkg/unfurl/          link previews: the SSRF-guarded fetcher, OpenGraph/Spotify parsing, cache
 internal/commands/   CLI commands
 internal/services/   one package per domain: repository + service
 internal/configfile/ the stack config file (BOSON_CONFIG), watched live
@@ -108,9 +113,61 @@ variables.
 | `CLOUDFLARE_R2_ACCESS_KEY` / `_SECRET_KEY` / `_ENDPOINT` / `_BUCKET` | unset / unset / unset / `boson` | avatar storage; uploads answer 503 without an access key |
 | `CLOUDFLARE_CDN_BASE_URL` | `https://cdn.boson.chat` | public base URL of stored avatars |
 | `NICK_CLAIM_*` | see below | |
+| `UNFURL_*`, `TRUSTED_PROXIES` | see below | link previews |
 
 Never commit real keys: put them in the deployment env or the gitignored
 `config/config.dev.json`.
+
+### Link previews
+
+`GET /v1/unfurl?url=<page>` returns a site card, and
+`GET /v1/unfurl/spotify?url=<open.spotify.com link>` a Spotify card, in the
+same JSON as the desktop app's own fetchers (boson `desktop/unfurl.go`,
+`spotify.go`; the code is a port of them, in `pkg/unfurl`):
+
+```json
+{"url":"…","title":"…","description":"…","image":"https://…","siteName":"…","author":"…","date":"…"}
+{"url":"…","type":"playlist","title":"…","subtitle":"…","cover":"https://…","durationMs":0,"previewUrl":"…","tracks":[{"title":"…","artist":"…","durationMs":0,"previewUrl":"…"}]}
+```
+
+200 with the card; 404 `no_preview` (not found, not HTML, unreachable or
+refused when connecting); 400 `url_not_allowed`; 429 `rate_limited` with
+`Retry-After`. Images stay remote URLs, as on the desktop (the web client's
+CSP allows https images).
+
+The fetch runs on the server, so it is guarded against reaching anything
+but the public web (SSRF):
+
+- http and https only, ports 80 and 443, no credentials in the URL; local
+  names (`localhost`, `*.local`, `*.internal`, …) and literal special
+  addresses are refused up front;
+- every address dialled is checked after DNS resolution (the dialer's
+  `Control` hook too), so a name that resolves, or re-resolves (DNS
+  rebinding), to a loopback, private, link-local, CGNAT, metadata
+  (169.254.169.254, fd00:ec2::254), NAT64/6to4 or reserved address is
+  refused;
+- at most 5 redirects, each re-checked; no environment proxy;
+- 8 s per fetch (5 s connect, TLS and response-header timeouts), bodies cut
+  at 1 MiB of HTML (1.5 MiB for YouTube, 2 MiB for Spotify embed pages),
+  `text/html` / `application/xhtml+xml` only; fields cut to a few hundred
+  characters;
+- User-Agent `Mozilla/5.0 (compatible; BosonBot/1.0; link preview)`.
+
+Anyone may call it. Anonymous fetches count against the caller's address
+(IPv6: its /64); with a valid access token, against the user instead (people
+behind one address don't share a budget). Answers are cached (LRU, with
+concurrent asks for one URL sharing a fetch) and cached answers don't
+count.
+
+| Variable | Default | |
+| --- | --- | --- |
+| `UNFURL_ENABLED` | `true` | |
+| `UNFURL_RATE_PER_IP` | `120` | anonymous fetches a minute per address (0 = unlimited) |
+| `UNFURL_RATE_PER_USER` | `60` | fetches a minute per signed-in user (0 = unlimited) |
+| `UNFURL_CACHE_SIZE` | `2000` | entries per cache (cards, Spotify) |
+| `UNFURL_CACHE_TTL_SECONDS` | `1800` | how long a card is kept ("no preview": 60 s) |
+| `TRUSTED_PROXIES` | loopback + private ranges | proxies whose `X-Forwarded-For` is believed (CIDRs) |
+| `UNFURL_TEST_HOST_MAP` | unset | e2e tests only, ignored when `ENV=production`: `name=host[:port],…` fetched over plain http from that address without the guard |
 
 ### Nick claims
 

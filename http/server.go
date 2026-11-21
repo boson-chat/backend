@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	stdhttp "net/http"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -12,8 +13,10 @@ import (
 	"github.com/boson-chat/backend/config"
 	"github.com/boson-chat/backend/http/handlers"
 	"github.com/boson-chat/backend/http/middleware"
+	"github.com/boson-chat/backend/internal/clientip"
 	"github.com/boson-chat/backend/internal/db"
 	"github.com/boson-chat/backend/internal/logger"
+	"github.com/boson-chat/backend/internal/ratelimit"
 	"github.com/boson-chat/backend/internal/services/authidentity"
 	"github.com/boson-chat/backend/internal/services/avatar"
 	"github.com/boson-chat/backend/internal/services/bouncersecret"
@@ -22,6 +25,7 @@ import (
 	"github.com/boson-chat/backend/internal/services/presence"
 	sessionsvc "github.com/boson-chat/backend/internal/services/session"
 	"github.com/boson-chat/backend/internal/services/user"
+	"github.com/boson-chat/backend/pkg/unfurl"
 )
 
 func StartServerWithContext(ctx context.Context) error {
@@ -70,12 +74,23 @@ func StartServerWithContext(ctx context.Context) error {
 	identities := authidentity.NewService(database)
 	adminProfilesHandler := handlers.NewAdminProfilesHandler(userService, identities, avatarService)
 
-	// Public routes — health and the capability switches the client reads
-	// (GET /config). The server directory moved to the standalone
-	// directory service (github.com/boson-chat/directory).
+	// Access tokens come from the boson auth service; auth_identities maps
+	// their sub to boson's user ids (imported Supabase accounts keep theirs).
+	tokens, err := middleware.NewVerifier(ctx, cfg.AuthConfig)
+	if err != nil {
+		return fmt.Errorf("auth: %w", err)
+	}
+
+	// Public routes — health, the capability switches the client reads
+	// (GET /config) and link previews (/v1/unfurl, signed in or not). The
+	// server directory moved to the standalone directory service
+	// (github.com/boson-chat/directory).
 	publicMux := stdhttp.NewServeMux()
 	publicMux.HandleFunc("GET /health", healthHandler(database))
 	handlers.NewPublicConfigHandler(nickClaimService).Register(publicMux)
+	if cfg.UnfurlConfig.Enabled {
+		newUnfurlHandler(ctx, cfg, tokens).Register(publicMux)
+	}
 
 	// Protected routes — everything that needs an authenticated principal.
 	protectedMux := stdhttp.NewServeMux()
@@ -87,12 +102,6 @@ func StartServerWithContext(ctx context.Context) error {
 	presenceHandler.Register(protectedMux)
 	adminProfilesHandler.Register(protectedMux)
 
-	// Access tokens come from the boson auth service; auth_identities maps
-	// their sub to boson's user ids (imported Supabase accounts keep theirs).
-	tokens, err := middleware.NewVerifier(ctx, cfg.AuthConfig)
-	if err != nil {
-		return fmt.Errorf("auth: %w", err)
-	}
 	root := buildRouter(publicMux, protectedMux, middleware.RequireAuth(tokens, identities))
 
 	// Nick claims: automatic NickServ registration on other networks.
@@ -139,8 +148,45 @@ func buildRouter(
 	root := stdhttp.NewServeMux()
 	root.Handle("/health", publicMux)
 	root.Handle("/config", publicMux)
+	root.Handle("/v1/unfurl", publicMux)
+	root.Handle("/v1/unfurl/", publicMux)
 	root.Handle("/", authedProtected)
 	return root
+}
+
+// newUnfurlHandler wires GET /v1/unfurl*: the guarded fetcher and its
+// cache (pkg/unfurl), per-address and per-user limits.
+func newUnfurlHandler(ctx context.Context, cfg config.Config, tokens *middleware.Verifier) *handlers.UnfurlHandler {
+	u := cfg.UnfurlConfig
+	opts := unfurl.Options{CacheSize: u.CacheSize, CacheTTL: time.Duration(u.CacheTTLSeconds) * time.Second}
+	if m := parseHostMap(u.TestHostMap); len(m) > 0 {
+		if cfg.AppConfig.Env == "production" {
+			logger.FromCtx(ctx).Warn().Msg("unfurl: UNFURL_TEST_HOST_MAP is ignored in production")
+		} else {
+			logger.FromCtx(ctx).Warn().Interface("hosts", m).Msg("unfurl: test host map in use (these names skip the SSRF guard)")
+			opts.Fetcher.TestHostMap = m
+		}
+	}
+	subject := func(tok string) (string, bool) {
+		c, err := tokens.Verify(tok)
+		if err != nil || !strings.HasPrefix(c.Subject, "usr_") {
+			return "", false
+		}
+		return c.Subject, true
+	}
+	return handlers.NewUnfurlHandler(unfurl.NewService(opts), ratelimit.New(u.RatePerIP), ratelimit.New(u.RatePerUser), clientip.New(u.TrustedProxies), subject)
+}
+
+// parseHostMap reads "name=host[:port],…".
+func parseHostMap(s string) map[string]string {
+	m := map[string]string{}
+	for _, kv := range strings.Split(s, ",") {
+		name, target, ok := strings.Cut(strings.TrimSpace(kv), "=")
+		if ok && strings.TrimSpace(name) != "" && strings.TrimSpace(target) != "" {
+			m[strings.ToLower(strings.TrimSpace(name))] = strings.TrimSpace(target)
+		}
+	}
+	return m
 }
 
 func healthHandler(database *db.DB) stdhttp.HandlerFunc {
