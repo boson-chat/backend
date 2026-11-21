@@ -1,3 +1,9 @@
+## [0.57.1](https://github.com/boson-chat/backend/compare/v0.57.0...v0.57.1) (2026-11-21)
+
+### Bug Fixes
+
+* retry the JWKS in the background when auth is down at startup ([#5](https://github.com/boson-chat/backend/issues/5)) ([3f38683](https://github.com/boson-chat/backend/commit/3f386833935da06a31afa91723b9b30398f91807))
+
 ## [0.57.0](https://github.com/boson-chat/backend/compare/v0.56.0...v0.57.0) (2026-11-21)
 
 ### Features
