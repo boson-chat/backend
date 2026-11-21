@@ -1,3 +1,9 @@
+## [0.57.0](https://github.com/boson-chat/backend/compare/v0.56.0...v0.57.0) (2026-11-21)
+
+### Features
+
+* GET /v1/unfurl link previews (site cards, YouTube, Spotify) with an SSRF-guarded fetcher ([#6](https://github.com/boson-chat/backend/issues/6)) ([31ac747](https://github.com/boson-chat/backend/commit/31ac747a223f9963bfceab1c0b78cb411c5b1296))
+
 ## [0.56.0](https://github.com/boson-chat/backend/compare/v0.55.1...v0.56.0) (2026-11-20)
 
 ### Features
