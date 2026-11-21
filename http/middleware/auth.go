@@ -9,8 +9,9 @@ import (
 	"time"
 
 	"github.com/boson-chat/backend/config"
+	"github.com/boson-chat/backend/internal/jwks"
+	"github.com/boson-chat/backend/internal/logger"
 
-	"github.com/MicahParks/keyfunc/v3"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -95,7 +96,9 @@ type Verifier struct {
 }
 
 // NewVerifier starts the JWKS cache. The JWKS being unreachable at startup
-// isn't fatal (keyfunc keeps retrying); tokens fail until it loads.
+// isn't fatal: it's retried in the background (1 s backoff up to 30 s),
+// refetched on an unknown kid at most every 10 s, and tokens fail until it
+// loads.
 func NewVerifier(ctx context.Context, cfg config.AuthConfig) (*Verifier, error) {
 	if cfg.JWKSURL == "" {
 		return nil, errors.New("AUTH_JWKS_URL is required")
@@ -106,7 +109,7 @@ func NewVerifier(ctx context.Context, cfg config.AuthConfig) (*Verifier, error) 
 	if cfg.Audience == "" {
 		return nil, errors.New("AUTH_AUDIENCE is required")
 	}
-	k, err := keyfunc.NewDefaultCtx(ctx, []string{cfg.JWKSURL})
+	k, err := jwks.New(ctx, []string{cfg.JWKSURL}, jwks.Options{Logger: logger.FromCtx(ctx)})
 	if err != nil {
 		return nil, fmt.Errorf("JWKS %s: %w", cfg.JWKSURL, err)
 	}
