@@ -29,6 +29,13 @@ func newTestRouter() (*stdhttp.ServeMux, *[]string) {
 		_, _ = w.Write([]byte("public:health"))
 	})
 
+	publicMux.HandleFunc("GET /v1/unfurl", func(w stdhttp.ResponseWriter, _ *stdhttp.Request) {
+		_, _ = w.Write([]byte("public:unfurl"))
+	})
+	publicMux.HandleFunc("GET /v1/unfurl/spotify", func(w stdhttp.ResponseWriter, _ *stdhttp.Request) {
+		_, _ = w.Write([]byte("public:spotify"))
+	})
+
 	protectedMux := stdhttp.NewServeMux()
 	protectedMux.HandleFunc("GET /me", func(w stdhttp.ResponseWriter, _ *stdhttp.Request) {
 		_, _ = w.Write([]byte("protected:me"))
@@ -83,4 +90,20 @@ func TestBuildRouter_UnknownPathStillHitsAuth(t *testing.T) {
 
 	assert.Equal(t, []string{"GET /does-not-exist"}, *hits)
 	assert.Equal(t, stdhttp.StatusNotFound, rr.Code)
+}
+
+func TestBuildRouter_UnfurlIsPublic(t *testing.T) {
+	router, hits := newTestRouter()
+	for path, want := range map[string]string{"/v1/unfurl?url=x": "public:unfurl", "/v1/unfurl/spotify?url=x": "public:spotify"} {
+		rr := httptest.NewRecorder()
+		router.ServeHTTP(rr, httptest.NewRequest("GET", path, nil))
+		assert.Equal(t, want, rr.Body.String())
+	}
+	assert.Empty(t, *hits, "/v1/unfurl must not need a token")
+}
+
+func TestParseHostMap(t *testing.T) {
+	assert.Equal(t, map[string]string{"unfurl.e2e.test": "host.docker.internal", "open.spotify.com": "host.docker.internal:18800"},
+		parseHostMap(" Unfurl.E2E.test=host.docker.internal, open.spotify.com=host.docker.internal:18800,bad,=x,y="))
+	assert.Empty(t, parseHostMap(""))
 }

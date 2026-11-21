@@ -25,6 +25,30 @@ type Config struct {
 	AuthConfig     AuthConfig
 	InternalConfig InternalConfig
 	StackConfig    StackConfig
+	UnfurlConfig   UnfurlConfig
+}
+
+// UnfurlConfig is GET /v1/unfurl and /v1/unfurl/spotify: link previews
+// for clients that can't fetch other sites themselves (the web client).
+// Anyone may call them: anonymous callers are limited per address, callers
+// with a valid access token per user. Cached answers don't count.
+type UnfurlConfig struct {
+	Enabled bool `env:"UNFURL_ENABLED" default:"true"`
+	// Fetches a minute per client address (IPv6: per /64) for anonymous
+	// callers. 0 = unlimited.
+	RatePerIP int `env:"UNFURL_RATE_PER_IP" default:"120"`
+	// Fetches a minute per signed-in user. 0 = unlimited.
+	RatePerUser int `env:"UNFURL_RATE_PER_USER" default:"60"`
+	// Entries per cache (cards, Spotify) and how long they're kept.
+	CacheSize       int `env:"UNFURL_CACHE_SIZE" default:"2000"`
+	CacheTTLSeconds int `env:"UNFURL_CACHE_TTL_SECONDS" default:"1800"`
+	// Proxies whose X-Forwarded-For is believed (comma-separated CIDRs).
+	// Empty: loopback and private addresses (the compose network).
+	TrustedProxies string `env:"TRUSTED_PROXIES" default:""`
+	// End-to-end tests only, ignored when ENV=production: name=host[:port]
+	// pairs (comma-separated) fetched over plain http from that address
+	// without the SSRF guard, e.g. a test page under a public-looking name.
+	TestHostMap string `env:"UNFURL_TEST_HOST_MAP" default:""`
 }
 
 // InternalConfig is the internal listener: GET /internal/config/status and
