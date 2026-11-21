@@ -1,3 +1,9 @@
+## [0.57.2](https://github.com/boson-chat/backend/compare/v0.57.1...v0.57.2) (2026-11-21)
+
+### Bug Fixes
+
+* JWKS cache race when a token arrives with the keys loading ([#7](https://github.com/boson-chat/backend/issues/7)) ([1fa03a1](https://github.com/boson-chat/backend/commit/1fa03a14a6f4a4beb9d7216496a82a05cd3e5b93))
+
 ## [0.57.1](https://github.com/boson-chat/backend/compare/v0.57.0...v0.57.1) (2026-11-21)
 
 ### Bug Fixes
