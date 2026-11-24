@@ -27,7 +27,7 @@ jobs:
     # Skip the commits semantic-release itself pushes.
     if: "!contains(github.event.head_commit.message, '[skip ci]')"
     outputs:
-      version: ${{ steps.release.outputs.version }}
+      version: ${{ steps.release.outputs.version || steps.recover.outputs.version }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,6 +42,8 @@ jobs:
       # $GITHUB_OUTPUT; empty when nothing was released.
       - name: semantic-release
         id: release
+        # A failure after the tag is pushed is recovered below.
+        continue-on-error: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: >
@@ -52,6 +54,47 @@ jobs:
           -p @semantic-release/git@10
           -p conventional-changelog-conventionalcommits@8
           semantic-release
+
+      # semantic-release pushes its git note (refs/notes/semantic-release-*)
+      # after the tag, and GitHub sometimes rejects that push with a bare
+      # "remote rejected ... (failed)". semantic-release then aborts before
+      # the GitHub Release and the version output, so no image is built
+      # either. If the release commit and tag did land, push the note again
+      # and finish the release by hand; anything else stays a failure.
+      - name: Recover a release interrupted after its tag
+        id: recover
+        if: steps.release.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          git fetch --quiet --tags origin main
+          # The tag semantic-release made: on its release commit, whose
+          # parent is the commit this run released.
+          tag=""
+          for t in $(git tag --contains "$GITHUB_SHA" --list 'v*' | sort -V); do
+            if [ "$(git rev-parse "$t^{commit}^")" = "$GITHUB_SHA" ]; then tag=$t; break; fi
+          done
+          if [ -z "$tag" ]; then
+            echo "::error::semantic-release failed before tagging a release; nothing to recover"
+            exit 1
+          fi
+          echo "::warning::semantic-release failed after pushing $tag; finishing the release"
+          note="refs/notes/semantic-release-$tag"
+          if git show-ref --quiet "$note"; then
+            pushed=""
+            for i in 1 2 3; do
+              if git push origin "$note"; then pushed=1; break; fi
+              echo "note push failed (try $i)"; sleep $((i * 5))
+            done
+            [ -n "$pushed" ] || echo "::warning::couldn't push $note; later releases still work from tags"
+          fi
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            # The release commit's body is semantic-release's release notes.
+            git log -1 --format=%b "$tag" > notes.md
+            gh release create "$tag" --verify-tag --title "$tag" --notes-file notes.md
+          fi
+          echo "version=${tag#v}" >> "$GITHUB_OUTPUT"
 
   # Tags pushed with GITHUB_TOKEN don't trigger `push: tags` workflows, so
   # call the image build directly.
@@ -65,3 +108,4 @@ jobs:
     with:
       version: ${{ needs.release.outputs.version }}
     secrets: inherit
+
