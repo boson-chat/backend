@@ -310,3 +310,35 @@ func TestMeHandler_Delete_InternalError(t *testing.T) {
 	rr := callMe(t, svc, middleware.Principal{UserID: uuid.New()}, "DELETE", "/me", "")
 	assert.Equal(t, stdhttp.StatusInternalServerError, rr.Code)
 }
+
+func TestMeHandler_HandleInvalid_StructuredError(t *testing.T) {
+	reject := func(_ string) (*user.User, error) { return nil, user.ValidateHandle("bad handle") }
+	svc := &stubUserService{
+		create: func(_ context.Context, in user.CreateUserInput) (*user.User, error) { return reject(in.Handle) },
+		updateHandle: func(_ context.Context, _ uuid.UUID, h string) (*user.User, error) {
+			return reject(h)
+		},
+	}
+	for _, c := range []struct{ method, body string }{
+		{"POST", `{"handle":"bad handle","encrypted_user_secret":"YWJjZA=="}`},
+		{"PATCH", `{"handle":"bad handle"}`},
+	} {
+		rr := callMe(t, svc, middleware.Principal{UserID: uuid.New()}, c.method, "/me", c.body)
+		assert.Equal(t, stdhttp.StatusBadRequest, rr.Code, c.method)
+		var got map[string]string
+		require.NoError(t, json.NewDecoder(rr.Body).Decode(&got))
+		assert.Equal(t, "invalid_handle", got["code"], c.method)
+		assert.Equal(t, "handle can't contain spaces", got["error"], c.method)
+	}
+}
+
+func TestMeHandler_HandleInvalid_BareSentinel(t *testing.T) {
+	svc := &stubUserService{
+		updateHandle: func(_ context.Context, _ uuid.UUID, _ string) (*user.User, error) {
+			return nil, user.ErrHandleInvalid
+		},
+	}
+	rr := callMe(t, svc, middleware.Principal{UserID: uuid.New()}, "PATCH", "/me", `{"handle":"ab"}`)
+	assert.Equal(t, stdhttp.StatusBadRequest, rr.Code)
+	assert.JSONEq(t, `{"error":"handle must be at least 3 characters","code":"invalid_handle"}`, rr.Body.String())
+}

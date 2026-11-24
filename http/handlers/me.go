@@ -110,7 +110,7 @@ func (h *MeHandler) create(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 	})
 	switch {
 	case errors.Is(err, user.ErrHandleInvalid):
-		writeError(w, stdhttp.StatusBadRequest, "handle must be at least 3 characters")
+		writeHandleError(w, err)
 		return
 	case errors.Is(err, user.ErrHandleTaken):
 		writeError(w, stdhttp.StatusConflict, "handle taken")
@@ -150,7 +150,7 @@ func (h *MeHandler) patch(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 	u, err := h.Users.UpdateHandle(r.Context(), p.UserID, *req.Handle)
 	switch {
 	case errors.Is(err, user.ErrHandleInvalid):
-		writeError(w, stdhttp.StatusBadRequest, "handle must be at least 3 characters")
+		writeHandleError(w, err)
 		return
 	case errors.Is(err, user.ErrHandleTaken):
 		writeError(w, stdhttp.StatusConflict, "handle taken")
@@ -316,4 +316,16 @@ func (h *MeHandler) deleteAvatar(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 		return
 	}
 	writeJSON(w, stdhttp.StatusOK, h.toResponse(updated))
+}
+
+// writeHandleError is a 400 {"error": <why, e.g. "handle must be at least 3
+// characters">, "code": "invalid_handle"}. Clients show "error" (it is a
+// sentence fragment like the auth service's) and may branch on "code".
+func writeHandleError(w stdhttp.ResponseWriter, err error) {
+	msg := "handle must be at least 3 characters"
+	var he *user.HandleError
+	if errors.As(err, &he) {
+		msg = he.Reason
+	}
+	writeJSON(w, stdhttp.StatusBadRequest, map[string]string{"error": msg, "code": "invalid_handle"})
 }
