@@ -1,3 +1,9 @@
+## [0.57.3](https://github.com/boson-chat/backend/compare/v0.57.2...v0.57.3) (2026-11-24)
+
+### Bug Fixes
+
+* validate handles with IRC nick rules on POST/PATCH /me ([#8](https://github.com/boson-chat/backend/issues/8)) ([4670ecc](https://github.com/boson-chat/backend/commit/4670ecc58bd123d7da275f63d8dabc5516179e31))
+
 ## [0.57.2](https://github.com/boson-chat/backend/compare/v0.57.1...v0.57.2) (2026-11-21)
 
 ### Bug Fixes
