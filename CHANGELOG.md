@@ -1,3 +1,9 @@
+## [0.58.0](https://github.com/boson-chat/backend/compare/v0.57.3...v0.58.0) (2026-11-27)
+
+### Features
+
+* "directory" entry in ALLOWED_ORIGINS (CORS for other installs' web clients) ([#9](https://github.com/boson-chat/backend/issues/9)) ([6cb13c5](https://github.com/boson-chat/backend/commit/6cb13c576ff9fad925b1f6db4f5496b20685acef))
+
 ## [0.57.3](https://github.com/boson-chat/backend/compare/v0.57.2...v0.57.3) (2026-11-24)
 
 ### Bug Fixes
