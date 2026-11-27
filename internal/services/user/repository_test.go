@@ -60,6 +60,28 @@ func TestUserRepository_UpdateUserSecretWraps(t *testing.T) {
 	assert.Equal(t, []byte("recovery-wrap"), got.EncryptedUserSecretRecovery, "recovery wrap untouched")
 }
 
+// A profile made without an identity key (an SSO account): stored as an
+// empty wrap, and the key set up later.
+func TestUserRepository_CreateWithoutKey_ThenSetUp(t *testing.T) {
+	db := testutil.SetupDB(t)
+	repo := user.NewUserRepository(db)
+	svc := user.NewUserService(repo)
+
+	id := uuid.New()
+	_, err := svc.Create(testutil.Ctx(), user.CreateUserInput{ID: id, Handle: "alice"})
+	require.NoError(t, err)
+	got, err := repo.FindByID(testutil.Ctx(), id)
+	require.NoError(t, err)
+	assert.Empty(t, got.EncryptedUserSecret)
+
+	_, err = repo.UpdateUserSecretWraps(testutil.Ctx(), id, []byte("pw-wrap"), []byte("recovery-wrap"))
+	require.NoError(t, err)
+	got, err = repo.FindByID(testutil.Ctx(), id)
+	require.NoError(t, err)
+	assert.Equal(t, []byte("pw-wrap"), got.EncryptedUserSecret)
+	assert.Equal(t, []byte("recovery-wrap"), got.EncryptedUserSecretRecovery)
+}
+
 func TestUserRepository_UpdateUserSecretWraps_NotFound(t *testing.T) {
 	db := testutil.SetupDB(t)
 	repo := user.NewUserRepository(db)

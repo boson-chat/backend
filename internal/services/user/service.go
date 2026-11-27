@@ -69,11 +69,16 @@ func (s *UserService) Create(ctx context.Context, in CreateUserInput) (*User, er
 		return nil, err
 	}
 
+	// No key yet (set up later): stored as an empty wrap, the column is NOT NULL.
+	secret := in.EncryptedUserSecret
+	if secret == nil {
+		secret = []byte{}
+	}
 	u := &User{
 		ID:                          in.ID,
 		Handle:                      handle,
 		DisplayName:                 in.DisplayName,
-		EncryptedUserSecret:         in.EncryptedUserSecret,
+		EncryptedUserSecret:         secret,
 		EncryptedUserSecretRecovery: in.EncryptedUserSecretRecovery,
 		IsDiscoverable:              true,
 	}
