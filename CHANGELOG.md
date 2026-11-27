@@ -1,3 +1,9 @@
+## [0.58.1](https://github.com/boson-chat/backend/compare/v0.58.0...v0.58.1) (2026-11-27)
+
+### Bug Fixes
+
+* **me:** a profile can be set up without an identity key ([#10](https://github.com/boson-chat/backend/issues/10)) ([fbb4a8c](https://github.com/boson-chat/backend/commit/fbb4a8c23e850a06f37d4cd85eb0de401202569b))
+
 ## [0.58.0](https://github.com/boson-chat/backend/compare/v0.57.3...v0.58.0) (2026-11-27)
 
 ### Features
