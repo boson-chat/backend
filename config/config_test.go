@@ -10,7 +10,7 @@ import (
 // envKeys are the env vars consumed by this package. The test suite
 // unsets them in TestMain so default values are observable.
 var envKeys = []string{
-	"PORT", "ENV", "ALLOWED_ORIGINS",
+	"PORT", "ENV", "ALLOWED_ORIGINS", "ORIGINS_URL", "ORIGINS_REFRESH",
 	"DBHOST", "DBPORT", "DBNAME", "DBUSERNAME", "DBPASSWORD", "DBSSLMODE",
 	"AUTH_JWKS_URL", "AUTH_ISSUER", "AUTH_AUDIENCE",
 	"INTERNAL_ADDR", "INTERNAL_PORT", "INTERNAL_TOKEN", "INTERNAL_API_TOKEN", "BOSON_CONFIG",

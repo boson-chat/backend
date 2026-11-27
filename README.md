@@ -102,7 +102,9 @@ variables.
 | --- | --- | --- |
 | `PORT` | `3000` | public API |
 | `ENV` | `development` | |
-| `ALLOWED_ORIGINS` | `http://localhost:5173` | CORS |
+| `ALLOWED_ORIGINS` | `http://localhost:5173` | pages allowed to call the API (CORS): comma-separated origins, and/or `directory` (the origins at `ORIGINS_URL`, e.g. `directory,https://chat.example.org`). No wildcard; empty allows no page. See below. |
+| `ORIGINS_URL` | unset | the auth service's `GET /v1/web-origins` (e.g. `http://auth:8080/v1/web-origins`); required when `ALLOWED_ORIGINS` has `directory` |
+| `ORIGINS_REFRESH` | `5m` | how often that list is fetched |
 | `DBHOST` / `DBPORT` / `DBNAME` / `DBUSERNAME` / `DBPASSWORD` / `DBSSLMODE` | `localhost` / `5432` / `boson` / `boson` / `boson` / `disable` | Postgres |
 | `AUTH_JWKS_URL` | `http://localhost:8080/.well-known/jwks.json` | auth service keys |
 | `AUTH_ISSUER` | `http://localhost:8080` | expected `iss` |
@@ -113,6 +115,24 @@ variables.
 | `CLOUDFLARE_R2_ACCESS_KEY` / `_SECRET_KEY` / `_ENDPOINT` / `_BUCKET` | unset / unset / unset / `boson` | avatar storage; uploads answer 503 without an access key |
 | `CLOUDFLARE_CDN_BASE_URL` | `https://cdn.boson.chat` | public base URL of stored avatars |
 | `NICK_CLAIM_*` | see below | |
+
+### Browser origins (CORS)
+
+Federated sessions on another install's web client (say
+`https://chat.other.example`) call the user's home API with the home bearer
+token, so the home API has to let that page in. `directory` in
+`ALLOWED_ORIGINS` allows the origins listed by the auth service's
+`GET /v1/web-origins`: this install's web client and those of the Boson
+servers verified in the directories it follows. The list is fetched at start
+and every `ORIGINS_REFRESH`; a failed fetch keeps the last good list, and
+before the first good one only the fixed entries are allowed (fixed entries
+always are). Origins compare normalised (case, default port, trailing slash).
+The allowed origin is echoed back (`Vary: Origin`), never `*`.
+
+The API is bearer-only (no cookies). `Access-Control-Allow-Credentials: true`
+is still sent to the fixed origins, as before; origins allowed only through
+the directory don't get it, since their calls carry a bearer token.
+Entries that aren't origins (`*` included) are ignored with a warning.
 | `UNFURL_*`, `TRUSTED_PROXIES` | see below | link previews |
 
 Never commit real keys: put them in the deployment env or the gitignored
