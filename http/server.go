@@ -16,6 +16,7 @@ import (
 	"github.com/boson-chat/backend/internal/clientip"
 	"github.com/boson-chat/backend/internal/db"
 	"github.com/boson-chat/backend/internal/logger"
+	"github.com/boson-chat/backend/internal/origins"
 	"github.com/boson-chat/backend/internal/ratelimit"
 	"github.com/boson-chat/backend/internal/services/authidentity"
 	"github.com/boson-chat/backend/internal/services/avatar"
@@ -30,6 +31,9 @@ import (
 
 func StartServerWithContext(ctx context.Context) error {
 	cfg := config.LoadConfigOrPanic()
+	if err := cfg.Validate(); err != nil {
+		return err
+	}
 	database := db.NewDatabase(cfg.DBConfig)
 
 	// Repositories
@@ -122,16 +126,40 @@ func StartServerWithContext(ctx context.Context) error {
 		go serveInternal(ctx, addr, internalMux)
 	}
 
+	log := logger.FromCtx(ctx)
+
+	// Browser pages allowed to call the API (ALLOWED_ORIGINS; "directory"
+	// follows the auth service's web origins).
+	corsPolicy := newCORSPolicy(ctx, cfg.AppConfig, nil)
+
 	addr := fmt.Sprintf(":%d", cfg.AppConfig.Port)
 	srv := &stdhttp.Server{
 		Addr:              addr,
-		Handler:           middleware.CORS(cfg.AppConfig.AllowedOrigins)(root),
+		Handler:           middleware.CORSPolicy(corsPolicy)(root),
 		ReadHeaderTimeout: 5 * time.Second,
 	}
 
-	log := logger.FromCtx(ctx)
 	log.Info().Str("addr", addr).Msg("HTTP server listening")
 	return srv.ListenAndServe()
+}
+
+// newCORSPolicy parses ALLOWED_ORIGINS (warning about entries that aren't
+// origins, which allow nothing) and, when it says "directory", starts
+// following ORIGINS_URL until ctx is done. client nil = a 10 s timeout one.
+func newCORSPolicy(ctx context.Context, app config.AppConfig, client *stdhttp.Client) *origins.Policy {
+	log := logger.FromCtx(ctx)
+	var dir *origins.Fetcher
+	if app.UsesDirectory() {
+		u := strings.TrimSpace(app.OriginsURL)
+		dir = origins.NewFetcher(u, app.OriginsRefresh, client)
+		log.Info().Str("url", u).Msg("web origins: following the directory's Boson web clients")
+		go dir.Run(ctx)
+	}
+	p, invalid := origins.Parse(app.AllowedOrigins, dir)
+	for _, e := range invalid {
+		log.Warn().Str("entry", e).Msg(`ALLOWED_ORIGINS: not an origin such as https://chat.example.org or "directory"; ignored`)
+	}
+	return p
 }
 
 // buildRouter wires the public and protected muxes onto a single root mux,

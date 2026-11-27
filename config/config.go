@@ -1,9 +1,12 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
+	"time"
 
 	"github.com/jinzhu/configor"
 )
@@ -96,10 +99,24 @@ type StackConfig struct {
 }
 
 type AppConfig struct {
-	AppName        string `default:"boson"`
-	Port           int    `env:"PORT" default:"3000"`
-	Env            string `env:"ENV" default:"development"`
+	AppName string `default:"boson"`
+	Port    int    `env:"PORT" default:"3000"`
+	Env     string `env:"ENV" default:"development"`
+	// Pages allowed to call the API from a browser (CORS): comma-separated
+	// origins, and/or "directory" = the origins at OriginsURL (other Boson
+	// installs' web clients, whose federated sessions call their home API
+	// here with its bearer token). Fixed origins stay allowed when that
+	// list can't be fetched. No wildcard (never "*"). Don't give any field
+	// here a default:"*" tag: configor reads tag defaults as YAML, where *
+	// is an alias, and then silently drops every default.
 	AllowedOrigins string `env:"ALLOWED_ORIGINS" default:"http://localhost:5173"`
+	// The web origins list for "directory": the auth service's
+	// GET /v1/web-origins ({"origins": [...]}), e.g.
+	// http://auth:8080/v1/web-origins. Fetched at start and every
+	// OriginsRefresh (unset or <= 0: 5m); the last good list stays when it
+	// fails.
+	OriginsURL     string        `env:"ORIGINS_URL"`
+	OriginsRefresh time.Duration `env:"ORIGINS_REFRESH"`
 	// NickClaim subsystem: automatic NickServ registration of a user's
 	// nick on other IRC networks. The backend mints
 	// `reg+<userid>-<short>@<email domain>` addresses and a POP3 worker
@@ -183,6 +200,24 @@ func LoadConfigOrPanic() Config {
 		panic(err)
 	}
 	return cfg
+}
+
+// UsesDirectory reports whether ALLOWED_ORIGINS has "directory".
+func (c AppConfig) UsesDirectory() bool {
+	for _, e := range strings.Split(c.AllowedOrigins, ",") {
+		if strings.EqualFold(strings.TrimSpace(e), "directory") {
+			return true
+		}
+	}
+	return false
+}
+
+// Validate checks settings that would otherwise fail confusingly later.
+func (c Config) Validate() error {
+	if c.AppConfig.UsesDirectory() && strings.TrimSpace(c.AppConfig.OriginsURL) == "" {
+		return errors.New("ALLOWED_ORIGINS says directory: set ORIGINS_URL (the auth service's /v1/web-origins, e.g. http://auth:8080/v1/web-origins)")
+	}
+	return nil
 }
 
 // configFileSearchPaths returns candidate config-file paths in
