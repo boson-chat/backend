@@ -158,9 +158,36 @@ func TestMeHandler_Post_BadBase64(t *testing.T) {
 	assert.Contains(t, rr.Body.String(), "base64")
 }
 
+// An SSO account has no password to wrap a key with at set-up: the
+// profile is made without one, and the key is set up later.
 func TestMeHandler_Post_EmptySecret(t *testing.T) {
-	rr := callMe(t, &stubUserService{}, middleware.Principal{UserID: uuid.New()},
+	uid := uuid.New()
+	svc := &stubUserService{
+		create: func(_ context.Context, in user.CreateUserInput) (*user.User, error) {
+			assert.Empty(t, in.EncryptedUserSecret)
+			return &user.User{ID: uid, Handle: in.Handle, EncryptedUserSecret: []byte{}}, nil
+		},
+	}
+	rr := callMe(t, svc, middleware.Principal{UserID: uid},
 		"POST", "/me", `{"handle":"alice","encrypted_user_secret":""}`)
+	assert.Equal(t, stdhttp.StatusCreated, rr.Code)
+	assert.Contains(t, rr.Body.String(), `"encrypted_user_secret":""`)
+}
+
+func TestMeHandler_Post_NoSecretField(t *testing.T) {
+	uid := uuid.New()
+	svc := &stubUserService{
+		create: func(_ context.Context, in user.CreateUserInput) (*user.User, error) {
+			return &user.User{ID: uid, Handle: in.Handle}, nil
+		},
+	}
+	rr := callMe(t, svc, middleware.Principal{UserID: uid}, "POST", "/me", `{"handle":"alice"}`)
+	assert.Equal(t, stdhttp.StatusCreated, rr.Code)
+}
+
+func TestMeHandler_Post_RecoveryWithoutSecret(t *testing.T) {
+	rr := callMe(t, &stubUserService{}, middleware.Principal{UserID: uuid.New()},
+		"POST", "/me", `{"handle":"alice","encrypted_user_secret_recovery":"ZWZnaA=="}`)
 	assert.Equal(t, stdhttp.StatusBadRequest, rr.Code)
 }
 

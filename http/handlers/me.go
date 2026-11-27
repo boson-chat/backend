@@ -84,10 +84,10 @@ func (h *MeHandler) create(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 		writeError(w, stdhttp.StatusBadRequest, "encrypted_user_secret must be base64")
 		return
 	}
-	if len(secret) == 0 {
-		writeError(w, stdhttp.StatusBadRequest, "encrypted_user_secret is required")
-		return
-	}
+	// An empty (or absent) encrypted_user_secret makes the profile without an
+	// identity key: an account signed in through an identity provider has no
+	// password to wrap one with at set-up. The client sets the key up later,
+	// when something needs it, with PUT /me/secret-wraps.
 
 	// Recovery wrap is optional on the wire so older clients keep working
 	// during rollout; new clients always send it (the signup recovery-code
@@ -99,6 +99,11 @@ func (h *MeHandler) create(w stdhttp.ResponseWriter, r *stdhttp.Request) {
 			writeError(w, stdhttp.StatusBadRequest, "encrypted_user_secret_recovery must be base64")
 			return
 		}
+	}
+
+	if len(secret) == 0 && len(recovery) > 0 {
+		writeError(w, stdhttp.StatusBadRequest, "encrypted_user_secret is required with a recovery wrap")
+		return
 	}
 
 	u, err := h.Users.Create(r.Context(), user.CreateUserInput{
